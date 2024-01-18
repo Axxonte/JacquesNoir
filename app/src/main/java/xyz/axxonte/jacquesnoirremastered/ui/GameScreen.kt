@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -30,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import xyz.axxonte.jacquesnoirremastered.R
 import xyz.axxonte.jacquesnoirremastered.data.Carte
@@ -41,10 +44,127 @@ fun GameScreen(gameViewModel: GameViewModel = viewModel()) {
     val gameUiState by gameViewModel.uiState.collectAsState()
 
     // Reset game Button
+    IngameDisplay(
+        playerCards = gameUiState.playerCards,
+        dealerCards = gameUiState.dealerCards,
+        playerScore = gameUiState.playerScore.toString(),
+        dealerScore = gameUiState.dealerScore.toString(),
+        onStayClick = { gameViewModel.dealerPlay() },
+        onDrawClick = { gameViewModel.playerDraw(1) }
+    )
+
+    when (gameUiState.gameState) {
+
+        GameState.LOSE -> {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {
+                    Button(onClick = { gameViewModel.resetGame() }) {
+                        Text(text = "Rejouer")
+                    }
+                },
+                title = {
+                    Text(text = "Perdu !")
+                },
+                text = {
+                    Text(text = "Le dealer a gagné !")
+                },
+                icon = {
+                    Image(painter = painterResource(id = R.drawable.lose), contentDescription = null)
+                },
+                properties = DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
+            )
+        }
+
+        GameState.WIN -> {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {
+                    Button(onClick = { gameViewModel.resetGame() }) {
+                        Text(text = "Rejouer")
+                    }
+                },
+                title = {
+                    Text(text = "Gagné !")
+                },
+                text = {
+                    Text(text = "Vous avez gagné !")
+                },
+                icon = {
+                    Image(painter = painterResource(id = R.drawable.win), contentDescription = null)
+                },
+                properties = DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
+            )
+        }
+
+        GameState.DRAW -> {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {
+                    Button(onClick = { gameViewModel.resetGame() }) {
+                        Text(text = "Rejouer")
+                    }
+                },
+                title = {
+                    Text(text = "Egalité !")
+                },
+                text = {
+                    Text(text = "Egalité !")
+                },
+                properties = DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
+            )
+        }
+
+        GameState.BLACKJACK -> {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = { gameViewModel.resetGame() },
+                title = {
+                    Text(text = "Jacques Noir !")
+                },
+                text = {
+                    Text(text = "BlackJack :)")
+                },
+                properties = DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false
+                )
+            )
+        }
+
+        GameState.INGAME -> {} /* Ingame state should not display anything so let's keep it empty */
+        GameState.BUGGED -> { /* Appear only if i missed a game end case */
+
+            AlertDialog(onDismissRequest = {},
+                confirmButton = { gameViewModel.resetGame() },
+                title = {
+                    Text(text = "Error in game end !")
+                },
+                text = {
+                    Text(text = "Unregistered end game case : ")
+                    Text(text = "Player Score : ${gameUiState.playerScore}")
+                    Text(text = "Dealer Score : ${gameUiState.dealerScore}")
+                },
+                icon = {
+                    Icon(imageVector = Icons.Outlined.Warning, contentDescription = null)
+                }
+            )
+        }
+    }
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopStart
-    ){
+    ) {
         IconButton(onClick = { gameViewModel.resetGame() }) {
             Icon(
                 imageVector = Icons.Outlined.Refresh,
@@ -52,48 +172,39 @@ fun GameScreen(gameViewModel: GameViewModel = viewModel()) {
             )
         }
     }
+}
 
-    when (gameUiState.gameState) {
-        GameState.INGAME -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Center
-            ) {
+@Composable
+fun IngameDisplay(
+    playerCards: List<Carte>,
+    dealerCards: List<Carte>,
+    playerScore: String,
+    dealerScore: String,
+    onDrawClick: () -> Unit,
+    onStayClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Center
+    ) {
 
-                HandDisplay(
-                    modifier = Modifier,
-                    cards = gameUiState.dealerCards
-                )
+        HandDisplay(
+            modifier = Modifier,
+            cards = dealerCards
+        )
 
-                InteractionsDisplay(
-                    modifier = Modifier.weight(0.5f),
-                    onDrawClick = {
-                        gameViewModel.playerDraw(1)
-                    },
-                    onStayClick = { gameViewModel.dealerPlay() },
-                    playerScore = gameUiState.playerScore,
-                    dealerScore = gameUiState.dealerScore
-                )
-                HandDisplay(cards = gameUiState.playerCards)
-            }
-        }
-
-        GameState.LOSE -> {
-            Text(text = "T'AS PERDU FDP !")
-        }
-        
-        GameState.WIN -> {
-            Text(text = "You WINNER !")
-        }
-        
-        GameState.DRAW -> {
-            Text(text = "Egalité")
-        }
-        
-        else -> Text(text = "Autre (╯°□°)╯︵ ┻━┻")
+        InteractionsDisplay(
+            modifier = Modifier.weight(0.5f),
+            onDrawClick = { onDrawClick() },
+            onStayClick = { onStayClick() },
+            playerScore = playerScore,
+            dealerScore = dealerScore
+        )
+        HandDisplay(cards = playerCards)
     }
 }
+
 
 @Composable
 fun findCardImageId(card: Carte): Int {
@@ -126,14 +237,13 @@ fun findCardImageId(card: Carte): Int {
     return drawableId
 }
 
-
 @Composable
 fun InteractionsDisplay(
     modifier: Modifier = Modifier,
     onDrawClick: () -> Unit,
     onStayClick: () -> Unit,
-    playerScore: Int,
-    dealerScore: Int
+    playerScore: String,
+    dealerScore: String
 ) {
     Row(
         modifier = modifier,
@@ -201,7 +311,7 @@ fun HandDisplay(modifier: Modifier = Modifier, cards: List<Carte>) {
 }
 
 @Composable
-fun ScoreDisplay(modifier: Modifier = Modifier, score: Int) {
+fun ScoreDisplay(modifier: Modifier = Modifier, score: String) {
     Card(
         modifier = Modifier.padding(all = 16.dp)
     ) {

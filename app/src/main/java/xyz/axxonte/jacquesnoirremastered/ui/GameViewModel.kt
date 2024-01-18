@@ -29,7 +29,7 @@ class GameViewModel: ViewModel() {
                 gameState = GameState.INGAME
             )
         }
-
+        deck = Deck()
         gameInit()
     }
 
@@ -113,8 +113,9 @@ class GameViewModel: ViewModel() {
 
         val result = when {
             dealerScore > 21 -> GameState.WIN
-            playerScore <= 21 && dealerScore > playerScore -> GameState.LOSE
-            dealerScore < 21 && dealerScore == playerScore -> GameState.DRAW
+            playerScore <= 21 && dealerScore > playerScore && dealerScore >= 21 -> GameState.LOSE
+            playerScore <= 21 && dealerScore < playerScore -> GameState.WIN
+            dealerScore <= 21 && dealerScore == playerScore -> GameState.DRAW
             else -> GameState.BUGGED
         }
 

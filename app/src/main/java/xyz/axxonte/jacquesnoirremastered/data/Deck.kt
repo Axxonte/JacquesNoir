@@ -1,5 +1,6 @@
 package xyz.axxonte.jacquesnoirremastered.data
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -67,6 +68,7 @@ class Deck {
                 )
 
                 deck.add(card)
+                Log.d("DECK", "Added : ${card} ")
             }
         }
 
@@ -77,7 +79,9 @@ class Deck {
         var result = mutableListOf<Carte>()
         for (i in 1..amount) {
             if (deck.isEmpty()){
+                Log.d("DEBUG", "Deck was empty. Recreating...")
                 createDeck()
+                Log.d("DEBUG", "New deck size : ${deck.size}")
             }
             result.add(deck.first())
             deck.removeFirst()
@@ -88,6 +92,11 @@ class Deck {
     fun drawVerso(amount: Int) : List<Carte>{
         var result = mutableListOf<Carte>()
         for (i in 1 .. amount) {
+            if (deck.isEmpty()){
+                Log.d("DEBUG", "Deck was empty. Recreating...")
+                createDeck()
+                Log.d("DEBUG", "New deck size : ${deck.size}")
+            }
             result.add(deck.first())
             result.first().isRecto = false
             deck.removeFirst()
